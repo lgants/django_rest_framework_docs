@@ -4,6 +4,7 @@ from rest_framework import generics
 from django.contrib.auth.models import User
 from snippets.serializers import UserSerializer
 from rest_framework import permissions
+from snippets.permissions import IsOwnerOrReadOnly
 
 # ListCreateAPIView is for read-write endpoints to represent a collection of model instances; provides get and post method handlers
 class SnippetList(generics.ListCreateAPIView):
@@ -21,7 +22,8 @@ class SnippetList(generics.ListCreateAPIView):
 class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    # IsOwnerOrReadOnly is custom class in permissions
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly,)
 
 # ListAPIView is for read-only endpoints to represent a collection of model instances; provides a get method handler
 class UserList(generics.ListAPIView):
