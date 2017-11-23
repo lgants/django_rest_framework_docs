@@ -1,19 +1,46 @@
 from snippets.models import Snippet
 from snippets.serializers import SnippetSerializer
-# from rest_framework import mixins
 from rest_framework import generics
+from django.contrib.auth.models import User
+from snippets.serializers import UserSerializer
+from rest_framework import permissions
 
-
+# ListCreateAPIView is for read-write endpoints to represent a collection of model instances; provides get and post method handlers
 class SnippetList(generics.ListCreateAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
+    # IsAuthenticatedOrReadOnly ensures that authenticated requests get read-write access and unauthenticated requests get read-only access
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
+# Overriding .perform_create() method on snippet views enables modifying how the instance save is managed, and handle any information that is implicit in the incoming request or requested URL
+    def perform_create(self, serializer):
+        # .create() method of the serializer will now be passed an additional 'owner' field along with the validated data from the request
+        serializer.save(owner=self.request.user)
+
+# RetrieveUpdateDestroyAPIView is for read-write-delete endpoints to represent a single model instance; provides get, put, patch and delete method handlers
 class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+# ListAPIView is for read-only endpoints to represent a collection of model instances; provides a get method handler
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+# RetrieveAPIView is for read-only endpoints to represent a single model instance; provides a get method handler
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
 
 """
-# Builds view using GenericAPIView, and adds in ListModelMixin as well as CreateModelMixin; mixin classes provide the .list() and .create() actions
+from snippets.models import Snippet
+from snippets.serializers import SnippetSerializer
+from rest_framework import mixins
+from rest_framework import generics
+
+# Builds view using GenericAPIView, and adds in ListModelMixin as well as CreateModelMixin; mixin classes provide .list() and .create() actions
 class SnippetList(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
                   generics.GenericAPIView):
