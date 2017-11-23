@@ -9,7 +9,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework import renderers
-from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework.decorators import detail_route
 
 
 class SnippetHighlight(generics.GenericAPIView):
@@ -27,6 +28,32 @@ def api_root(request, format=None):
         'users': reverse('user-list', request=request, format=format),
         'snippets': reverse('snippet-list', request=request, format=format)
     })
+
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    # This viewset automatically provides `list` and `detail` actions
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class SnippetViewSet(viewsets.ModelViewSet):
+    # This viewset automatically provides `list`, `create`, `retrieve`, `update` and `destroy` actions; also manually added an extra `highlight` action
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly,)
+
+    # Uses @detail_route decorator to create a custom action, named highlight
+    @detail_route(renderer_classes=[renderers.StaticHTMLRenderer])
+    def highlight(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+"""
+# Deprecated
 
 # ListCreateAPIView is for read-write endpoints to represent a collection of model instances; provides get and post method handlers
 class SnippetList(generics.ListCreateAPIView):
@@ -47,6 +74,16 @@ class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
     # IsOwnerOrReadOnly is custom class in permissions
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly,)
 
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    # This viewset automatically provides `list` and `detail` actions
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+"""
+
+
+"""
+# Deprecated when consolidating into a viewset
+
 # ListAPIView is for read-only endpoints to represent a collection of model instances; provides a get method handler
 class UserList(generics.ListAPIView):
     queryset = User.objects.all()
@@ -56,6 +93,7 @@ class UserList(generics.ListAPIView):
 class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+"""
 
 
 """
