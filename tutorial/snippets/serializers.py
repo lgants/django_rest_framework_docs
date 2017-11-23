@@ -3,22 +3,25 @@ from snippets.models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
 from django.contrib.auth.models import User
 
 
-class SnippetSerializer(serializers.ModelSerializer):
+# HyperlinkedModelSerializer differences from ModelSerializer: doesn't include id by default, includes a url field (via HyperlinkedIdentityField), Relationships use HyperlinkedRelatedField instead of PrimaryKeyRelatedField
+class SnippetSerializer(serializers.HyperlinkedModelSerializer):
     # source argument controls which attribute is used to populate a field
     # ReadOnlyField is untyped and always read-only; it's used for serialized representations, but will not be used for updating model instances when they are deserialized
     owner = serializers.ReadOnlyField(source='owner.username')
+    highlight = serializers.HyperlinkedIdentityField(view_name='snippet-highlight', format='html')
 
+    # Highlight field is same type as url field, except it points to 'snippet-highlight' url pattern instead of 'snippet-detail' url pattern
     class Meta:
         model = Snippet
-        fields = ('id', 'title', 'code', 'linenos', 'language', 'style', 'owner')
+        fields = ('url', 'id', 'highlight', 'owner', 'title', 'code', 'linenos', 'language', 'style')
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.HyperlinkedModelSerializer):
     snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'snippets')
+        fields = ('url', 'id', 'username', 'snippets')
 
 
 """
